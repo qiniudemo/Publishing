@@ -8,12 +8,6 @@
 
 #include <cstring>
 
-extern "C" {
-#include "push.h"
-}
-
-#define __PILI_SDK__
-
 #define FILE_BUFFER_SIZE (1024 * 1024 * 15)
 #define FLV_CODECID_H264 7
 
@@ -49,6 +43,7 @@ typedef struct _RtmpMetadata
 
 class RtmpStream
 {
+/*
 // pili sdk
 public:
 	RtmpStream(const char *piliUser);
@@ -66,6 +61,7 @@ private:
 	pili_h264_key_frame_t m_piliKeyframe;
 	unsigned int m_piliTick;
 	unsigned int m_piliFps;
+*/
 
 // generic
 public:
@@ -73,11 +69,11 @@ public:
 	~RtmpStream(void);
 	bool Connect(const char *url);
 	void Close();
-	bool SendMetadata(RtmpMetadata * pMeta);
-	bool SendH264Packet(char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
 	bool SendH264File(const char *pFileName);
 
-private:
+protected:
+        bool SendMetadata(RtmpMetadata * pMeta);
+        bool SendH264Packet(char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
 	bool ReadOneNaluFromBuf(NalUnit & nalu);
 	bool GetNextNalUnit(unsigned int nStart, unsigned int &nDelimiter, unsigned int &nNalu);
 	int SendPacket(unsigned int nPacketType, char *data, unsigned int size, unsigned int nTimestamp);
