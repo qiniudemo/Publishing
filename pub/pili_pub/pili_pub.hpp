@@ -24,5 +24,4 @@ private:
         pili_stream_context_p m_piliCtx;
         pili_h264_key_frame_t m_piliKeyframe;
         unsigned int m_piliTick;
-        unsigned int m_piliFps;
 };

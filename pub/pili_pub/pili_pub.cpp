@@ -106,7 +106,7 @@ void PiliStream::PutSps(NalUnit *_pNalu)
 {
 	//int width, height;
         //Util264::h264_decode_sps(_pNalu.data, _pNalu.size, width, height);
-        m_piliFps = 30;
+        m_nFrameRate = 30;
 
 	m_piliKeyframe.sps.data = (uint8_t *)_pNalu->data;
 	m_piliKeyframe.sps.length = _pNalu->size;
@@ -148,7 +148,7 @@ void PiliStream::PutSlice(NalUnit *_pNalu)
 
 void PiliStream::RunTicks()
 {
-	unsigned int fps = 1000 / m_piliFps;
+	unsigned int fps = 1000 / m_nFrameRate;
 	m_piliTick += fps;
 	msleep(fps);
 }

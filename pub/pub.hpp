@@ -82,6 +82,7 @@ protected:
 	char *m_pFileBuf;
 	unsigned int m_nFileBufSize;
 	unsigned int m_nCurPos;
+	unsigned int m_nFrameRate;
 };
 
 static inline char * put_byte(char *output, uint8_t nVal)

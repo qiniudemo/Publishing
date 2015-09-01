@@ -165,7 +165,9 @@ bool RtmpStream::SendH264Packet(char *_data, unsigned int _size, bool _bIsKeyFra
                 body[i++] = 0x27; // 2:Pframe 7:AVC
         }
         body[i++] = 0x01; // AVC NALU
-        body[i++] = 0x00;        
+
+	// composition time adjustment
+        body[i++] = 0x00;
         body[i++] = 0x00;
         body[i++] = 0x00;
 
@@ -222,7 +224,9 @@ bool RtmpStream::SendH264File(const char *_pFileName)
         Util264::h264_decode_sps(meta.sps, meta.nSpsLen, width, height);
         meta.nWidth = width;
         meta.nHeight = height;
+	// TODO fps data from 264 stream
         meta.nFrameRate = 30;
+	m_nFrameRate = meta.nFrameRate;
 
 	cout << "[debug] width=" << width << " height=" << height << endl;
 
