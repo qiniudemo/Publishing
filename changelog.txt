@@ -1,3 +1,4 @@
 Stream manapulation proj
 
 2015.08.27 Qiniu-pili c-sdk testing model
+2015.09.07 Multipath RTSP clients support

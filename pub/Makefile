@@ -14,7 +14,7 @@ LIB_SO=
 
 LIBRTMP=../rtmpdump/librtmp
 
-all: $(SOURCES) librtmp pilipub link
+all: $(SOURCES) librtmp pilipub rtsppub link
 
 build: clean all
 
@@ -22,6 +22,7 @@ clean:
 	-rm *.o *.a $(BIN) *~
 	cd ../rtmpdump/librtmp/ && make clean
 	cd pili_pub && make clean
+	cd rtsp_pub && make clean clean555
 librtmp:
 	cd $(LIBRTMP) && make
 	cp $(LIBRTMP)/*.a .
@@ -45,4 +46,5 @@ indent:
 
 pilipub:
 	cd pili_pub && make
-
+rtsppub:
+	cd rtsp_pub && make

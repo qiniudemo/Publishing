@@ -2,6 +2,9 @@
 // pub.hpp
 //
 
+#ifndef __PUB_HPP__
+#define __PUB_HPP__
+
 #include "rtmp.h"
 #include "rtmp_sys.h"
 #include "amf.h"
@@ -13,76 +16,56 @@
 
 typedef struct _NalUnit
 {
-	int type;
-	int size;
-	char *data;
+        int type;
+        int size;
+        char *data;
 } NalUnit;
 
 typedef struct _RtmpMetadata
 {
-	unsigned int nWidth;
-	unsigned int nHeight;
+        unsigned int nWidth;
+        unsigned int nHeight;
 
-	// define fps and bps
-	unsigned int nFrameRate;
-	unsigned int nVideoDataRate;
+        // define fps and bps
+        unsigned int nFrameRate;
+        unsigned int nVideoDataRate;
 
-	unsigned int nSpsLen;
-	char sps[1024];
-	unsigned int nPpsLen;
-	char pps[1024];
+        unsigned int nSpsLen;
+        char sps[1024];
+        unsigned int nPpsLen;
+        char pps[1024];
 
-	// audio
-	bool bHasAudio;
-	unsigned int nAudioSampleRate;
-	unsigned int nAudioSampleSize;
-	unsigned int nAudioChannels;
-	char *pAudioSpecCfg;
-	unsigned int nAudioSpecCfgLen;
+        // audio
+        bool bHasAudio;
+        unsigned int nAudioSampleRate;
+        unsigned int nAudioSampleSize;
+        unsigned int nAudioChannels;
+        char *pAudioSpecCfg;
+        unsigned int nAudioSpecCfgLen;
 } RtmpMetadata;
 
 class RtmpStream
 {
-/*
-// pili sdk
 public:
-	RtmpStream(const char *piliUser);
-	bool PiliConnect(const char *url, pili_stream_state_cb callback);
-	void PiliDisconnect();
-	bool PiliSendH264File(const char *pFileName);
-private:
-	void PiliPutPps(NalUnit *pNalu);
-	void PiliPutSps(NalUnit *pNalu);
-	void PiliPutSei(NalUnit *pNalu);
-	void PiliPutIdr(NalUnit *pNalu);
-	void PiliPutSlice(NalUnit *pNalu);
-	void PiliTicks();
-	pili_stream_context_p m_piliCtx;
-	pili_h264_key_frame_t m_piliKeyframe;
-	unsigned int m_piliTick;
-	unsigned int m_piliFps;
-*/
-
-// generic
-public:
-	RtmpStream(void);
-	~RtmpStream(void);
-	bool Connect(const char *url);
-	void Close();
-	bool SendH264File(const char *pFileName);
+        RtmpStream(void);
+        ~RtmpStream(void);
+        // TODO define as virtual functions
+        bool Connect(const char *url);
+        void Close();
+        bool SendH264File(const char *pFileName);
 
 protected:
         bool SendMetadata(RtmpMetadata * pMeta);
-        bool SendH264Packet(char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
-	bool ReadOneNaluFromBuf(NalUnit & nalu);
-	bool GetNextNalUnit(unsigned int nStart, unsigned int &nDelimiter, unsigned int &nNalu);
-	int SendPacket(unsigned int nPacketType, char *data, unsigned int size, unsigned int nTimestamp);
-	void PrintNalUnit(const NalUnit *pNalu);
-	RTMP *m_pRtmp;
-	char *m_pFileBuf;
-	unsigned int m_nFileBufSize;
-	unsigned int m_nCurPos;
-	unsigned int m_nFrameRate;
+        bool SendH264Packet(const char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
+        bool ReadOneNaluFromBuf(NalUnit & nalu);
+        bool GetNextNalUnit(unsigned int nStart, unsigned int &nDelimiter, unsigned int &nNalu);
+        int SendPacket(unsigned int nPacketType, const char *data, unsigned int size, unsigned int nTimestamp);
+        void PrintNalUnit(const NalUnit *pNalu);
+        RTMP *m_pRtmp;
+        char *m_pFileBuf;
+        unsigned int m_nFileBufSize;
+        unsigned int m_nCurPos;
+        unsigned int m_nFrameRate;
 };
 
 static inline char * put_byte(char *output, uint8_t nVal)
@@ -149,3 +132,4 @@ static inline char * put_amf_double(char *c, double d)
         return c + 8;
 }
 
+#endif

@@ -80,6 +80,7 @@ bool PiliStream::SendH264File(const char *_pFileName)
         NalUnit nalu;
         while (ReadOneNaluFromBuf(nalu)) {
 		switch (nalu.type) {
+		// TODO check return values
 		case 0x01:
 			PutSlice(&nalu);
 			break;

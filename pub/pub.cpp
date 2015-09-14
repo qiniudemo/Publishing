@@ -40,6 +40,9 @@ bool RtmpStream::Connect(const char *_url)
         if (RTMP_ConnectStream(m_pRtmp, 0) < 0) {
                 return false;
         }
+        if (RTMP_IsConnected(m_pRtmp) == 0) {
+                return false;
+        }
         return true;
 }
 
@@ -52,7 +55,7 @@ void RtmpStream::Close()
         }
 }
 
-int RtmpStream::SendPacket(unsigned int _nPacketType, char *_data, unsigned int _size, unsigned int _nTimestamp)
+int RtmpStream::SendPacket(unsigned int _nPacketType, const char *_data, unsigned int _size, unsigned int _nTimestamp)
 {
         if (m_pRtmp == nullptr) {
                 return 0;
@@ -150,7 +153,7 @@ bool RtmpStream::SendMetadata(RtmpMetadata *_pMeta)
         return SendPacket(RTMP_PACKET_TYPE_VIDEO, (char *)body, i, 0);
 }
 
-bool RtmpStream::SendH264Packet(char *_data, unsigned int _size, bool _bIsKeyFrame, unsigned int _nTimeStamp)
+bool RtmpStream::SendH264Packet(const char *_data, unsigned int _size, bool _bIsKeyFrame, unsigned int _nTimeStamp)
 {
         if (_data == nullptr && _size < 11) {
                 return false;
@@ -166,7 +169,7 @@ bool RtmpStream::SendH264Packet(char *_data, unsigned int _size, bool _bIsKeyFra
         }
         body[i++] = 0x01; // AVC NALU
 
-	// composition time adjustment
+        // composition time adjustment
         body[i++] = 0x00;
         body[i++] = 0x00;
         body[i++] = 0x00;
@@ -208,15 +211,15 @@ bool RtmpStream::SendH264File(const char *_pFileName)
         NalUnit nalu;
         // read sps
         if (ReadOneNaluFromBuf(nalu) == false) {
-		return false;
-	}
+                return false;
+        }
         meta.nSpsLen = nalu.size;
         memcpy(meta.sps, nalu.data, nalu.size);
 
         // read pps
         if (ReadOneNaluFromBuf(nalu) == false) {
-		return false;
-	}
+                return false;
+        }
         meta.nPpsLen = nalu.size;
         memcpy(meta.pps, nalu.data, nalu.size);
 
@@ -224,26 +227,26 @@ bool RtmpStream::SendH264File(const char *_pFileName)
         Util264::h264_decode_sps(meta.sps, meta.nSpsLen, width, height);
         meta.nWidth = width;
         meta.nHeight = height;
-	// TODO fps data from 264 stream
+        // TODO fps data from 264 stream
         meta.nFrameRate = 30;
-	m_nFrameRate = meta.nFrameRate;
+        m_nFrameRate = meta.nFrameRate;
 
-	cout << "[debug] width=" << width << " height=" << height << endl;
+        cout << "[debug] width=" << width << " height=" << height << endl;
 
         // send metadata
         SendMetadata(&meta);
 
         unsigned int tick = 0;
-	unsigned int n = 0;
+        unsigned int n = 0;
         while (ReadOneNaluFromBuf(nalu)) {
-		// notice : for a normal h264 stream, we have 1 sps
-		// and 1 pps as initial NALUs, so skip others
-		if (nalu.type == 0x06 || nalu.type == 0x07 || nalu.type == 0x08) {
-			cout << " == skip type " << nalu.type << " ==" << endl;
-			continue;
-		}
+                // notice : for a normal h264 stream, we have 1 sps
+                // and 1 pps as initial NALUs, so skip others
+                if (nalu.type == 0x06 || nalu.type == 0x07 || nalu.type == 0x08) {
+                        cout << " == skip type " << nalu.type << " ==" << endl;
+                        continue;
+                }
 
-		bool bKeyFrame = (nalu.type == 0x05) ? true : false;
+                bool bKeyFrame = (nalu.type == 0x05) ? true : false;
 
                 // send h264 frames
                 SendH264Packet(nalu.data, nalu.size, bKeyFrame, tick);
@@ -256,55 +259,55 @@ bool RtmpStream::SendH264File(const char *_pFileName)
 
 bool RtmpStream::GetNextNalUnit(unsigned int _nStart, unsigned int &_nDelimiter, unsigned int &_nNalu)
 {
-	unsigned int nSeqZeroByte = 0;
-	unsigned int i = _nStart;
-	for (; i < m_nFileBufSize; i++) {
-		if (m_pFileBuf[i] == 0x00) {
-			nSeqZeroByte++;
-		} else if (m_pFileBuf[i] == 0x01) {
-			if (nSeqZeroByte >= 2 && nSeqZeroByte <= 3) {
-				// 00 00 01 & 00 00 00 01
-				_nDelimiter = i - nSeqZeroByte;
-				_nNalu = i + 1;
-				if (_nNalu >= m_nFileBufSize) {
-					cout << "[warning] last NALU payload not valid" << endl;
-				}
-				return true;
-			} else if (nSeqZeroByte > 3) {
-				cout << "[error] missing 4-byte seq "<< nSeqZeroByte << "@" << i << endl;
-			}
-			nSeqZeroByte = 0;
-		} else {
-			nSeqZeroByte = 0;
-		}
-	}
-	return false;
+        unsigned int nSeqZeroByte = 0;
+        unsigned int i = _nStart;
+        for (; i < m_nFileBufSize; i++) {
+                if (m_pFileBuf[i] == 0x00) {
+                        nSeqZeroByte++;
+                } else if (m_pFileBuf[i] == 0x01) {
+                        if (nSeqZeroByte >= 2 && nSeqZeroByte <= 3) {
+                                // 00 00 01 & 00 00 00 01
+                                _nDelimiter = i - nSeqZeroByte;
+                                _nNalu = i + 1;
+                                if (_nNalu >= m_nFileBufSize) {
+                                        cout << "[warning] last NALU payload not valid" << endl;
+                                }
+                                return true;
+                        } else if (nSeqZeroByte > 3) {
+                                cout << "[error] missing 4-byte seq "<< nSeqZeroByte << "@" << i << endl;
+                        }
+                        nSeqZeroByte = 0;
+                } else {
+                        nSeqZeroByte = 0;
+                }
+        }
+        return false;
 }
 
 bool RtmpStream::ReadOneNaluFromBuf(NalUnit &nalu)
 {
-	unsigned int nDelimiterPos, nNaluPos;
-	while (GetNextNalUnit(m_nCurPos, nDelimiterPos, nNaluPos)) {
-		unsigned int nThisNalu = nNaluPos;
-		if (GetNextNalUnit(nThisNalu, nDelimiterPos, nNaluPos) != true) {
-			nDelimiterPos = m_nFileBufSize;
-		}
-		nalu.size = nDelimiterPos - nThisNalu;
-		nalu.type = m_pFileBuf[nThisNalu] & 0x01f;
-		nalu.data = &m_pFileBuf[nThisNalu];
+        unsigned int nDelimiterPos, nNaluPos;
+        while (GetNextNalUnit(m_nCurPos, nDelimiterPos, nNaluPos)) {
+                unsigned int nThisNalu = nNaluPos;
+                if (GetNextNalUnit(nThisNalu, nDelimiterPos, nNaluPos) != true) {
+                        nDelimiterPos = m_nFileBufSize;
+                }
+                nalu.size = nDelimiterPos - nThisNalu;
+                nalu.type = m_pFileBuf[nThisNalu] & 0x01f;
+                nalu.data = &m_pFileBuf[nThisNalu];
 
-		cout << "[debug] pos=" << m_nCurPos << " nalu.type="
-		     << nalu.type << " nalu.size=" << nalu.size << endl;
+                cout << "[debug] pos=" << m_nCurPos << " nalu.type="
+                     << nalu.type << " nalu.size=" << nalu.size << endl;
 
-		m_nCurPos = nDelimiterPos;
+                m_nCurPos = nDelimiterPos;
                 return true;
-	}
+        }
         cout << "[debug] end of publish" << endl;
         return false;
 }
 
 void RtmpStream::PrintNalUnit(const NalUnit *_pNalu)
 {
-	cout << "[NALU] pos=" << m_nCurPos << " type=" << _pNalu->type
-	     << " size=" << _pNalu->size << endl;
+        cout << "[NALU] pos=" << m_nCurPos << " type=" << _pNalu->type
+             << " size=" << _pNalu->size << endl;
 }
