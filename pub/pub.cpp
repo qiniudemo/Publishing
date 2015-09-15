@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 #include "pub.hpp"
 #include "x264.hpp"

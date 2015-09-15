@@ -16,9 +16,9 @@ RtmpPacketSender::RtmpPacketSender(string &_url):
         ResetPps();
         ResetSei();
 
-        bzero(m_spsData, SPS_BUFFER_SIZE);
-        bzero(m_ppsData, PPS_BUFFER_SIZE);
-        bzero(m_seiData, SEI_BUFFER_SIZE);
+        memset(m_spsData, 0, SPS_BUFFER_SIZE);
+        memset(m_ppsData, 0, PPS_BUFFER_SIZE);
+        memset(m_seiData, 0, SEI_BUFFER_SIZE);
 
         SetStatus(INITIALIZED);
 }

@@ -3,11 +3,18 @@
 //
 
 #include "rtsp_pub.hpp"
+#include <iostream>
 
 int main(int argc, char** argv)
 {
+	if (argc != 4) {
+		cout << "Usage: " << endl;
+		cout << "  " << argv[0] << " <name> <rtsp://xxxx> <rtmp://xxxx>" << endl;
+		cout << "  " << argv[0] << " -d <path_to_config_file>" << endl;
+		return 1;
+	}
         Rtsp2Rtmp streamManager;
-        streamManager.CreateStreamPair("v1", "rtsp://10.10.10.103/av0_0", "rtmp://vcww0t.publish.z1.pili.qiniup.com/linqibin/test?key=ddf7b516");
+	streamManager.CreateStreamPair(argv[1], argv[2], argv[3]);
         return 0;
 }
 
