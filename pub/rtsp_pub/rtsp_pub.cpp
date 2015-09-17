@@ -17,6 +17,7 @@ RtspSink::RtspSink(UsageEnvironment& _env, MediaSubsession& _subsession, char co
 {
         m_streamId = _pStreamId;
         m_pReceiveBuffer = new u_int8_t[RTSP_SINK_RECEIVE_BUFFER_SIZE];
+        m_bIsConfigSent = false;
 }
 
 RtspSink::~RtspSink()
@@ -48,7 +49,6 @@ void RtspSink::OnGettingFrame(void* _pClientData, unsigned int _nFrameSize, unsi
 void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
                             struct timeval _presentationTime, unsigned int _durationInMicroseconds)
 {
-        static bool bIsConfigSent = false;
         bool bStatus = true;
         short nUnitType = static_cast<short> (m_pReceiveBuffer[0]) & 0x0f;
         RtspStream *pRtsp = (RtspStream *)m_subsession.miscPtr;
@@ -60,7 +60,7 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
         }
 
         // send configuration if needed
-        if (bIsConfigSent == false) {
+        if (m_bIsConfigSent == false) {
                 const char *pSPropSets = m_subsession.fmtp_spropparametersets();
                 if (pSPropSets != nullptr) {
                         short nSPropType;
@@ -86,7 +86,7 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
                                 return;
                         } else {
                                 cout << *pRtsp << "Configuration sent ..." << endl;
-                                bIsConfigSent = true;
+                                m_bIsConfigSent = true;
                         }
                 }
         }

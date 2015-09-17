@@ -46,6 +46,11 @@ int PubConfig::LoadConfigFile(const string &_path)
                         continue;
                 }
 
+                // commented out
+                if (pBuffer[0] == '#') {
+                        continue;
+                }
+
                 // no new line
                 if (pBuffer[nLength - 1] == '\n') {
                         pBuffer[nLength - 1] = 0;

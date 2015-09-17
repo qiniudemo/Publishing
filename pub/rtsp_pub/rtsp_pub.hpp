@@ -95,6 +95,7 @@ private:
         u_int8_t* m_pReceiveBuffer;
         MediaSubsession& m_subsession;
         string m_streamId;
+	bool m_bIsConfigSent;
 };
 
 
