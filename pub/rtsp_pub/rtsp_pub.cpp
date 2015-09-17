@@ -59,6 +59,38 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
                 return;
         }
 
+        // send configuration if needed
+        if (bIsConfigSent == false) {
+                const char *pSPropSets = m_subsession.fmtp_spropparametersets();
+                if (pSPropSets != nullptr) {
+                        short nSPropType;
+                        unsigned int nSPropRecords;
+                        SPropRecord *pSPropRecords = parseSPropParameterSets(pSPropSets, nSPropRecords);
+                        for (unsigned int i = 0; i < nSPropRecords; i++) {
+                                nSPropType = static_cast<short> (pSPropRecords[i].sPropBytes[0]) & 0x0f;
+                                switch (nSPropType) {
+                                case 0x7:
+                                        pRtmp->Sps((char *)pSPropRecords[i].sPropBytes, pSPropRecords[i].sPropLength);
+                                        break;
+                                case 0x8:
+                                        pRtmp->Pps((char *)pSPropRecords[i].sPropBytes, pSPropRecords[i].sPropLength);
+                                        break;
+                                default:
+                                        cout << *pRtsp << "SPropParam: invalid type: " << nSPropType << endl;
+                                        break;
+                                }
+                        }
+                        bStatus = pRtmp->SendConfig();
+                        if (bStatus == false) {
+                                cout << *pRtsp << "Configuration not sent" << endl;
+                                return;
+                        } else {
+                                cout << *pRtsp << "Configuration sent ..." << endl;
+                                bIsConfigSent = true;
+                        }
+                }
+        }
+
         switch (nUnitType) {
         case 0x1:
                 bStatus = pRtmp->SendNonIdr((char *)m_pReceiveBuffer, _nFrameSize);
@@ -74,16 +106,6 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
                 break;
         case 0x8:
                 pRtmp->Pps((char *)m_pReceiveBuffer, _nFrameSize);
-                if (bIsConfigSent == false) {
-                        bStatus = pRtmp->SendConfig();
-                        if (bStatus == false) {
-                                cout << *pRtsp << "Configuration not sent" << endl;
-                                return;
-                        } else {
-                                cout << *pRtsp << "Configuration sent ..." << endl;
-                                bIsConfigSent = true;
-                        }
-                }
                 break;
         default:
                 cout << *pRtsp << "Error: NAL type not handled" << endl;
@@ -404,13 +426,13 @@ Rtsp2Rtmp::~Rtsp2Rtmp(void)
 
 void Rtsp2Rtmp::Add(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
 {
-	CreateStreamPair(_pName, _pRtspUrl, _pRtmpUrl);
+        CreateStreamPair(_pName, _pRtspUrl, _pRtmpUrl);
 }
 
 void Rtsp2Rtmp::Run()
 {
-	StartStreaming();
-	StartEventLoop();
+        StartStreaming();
+        StartEventLoop();
 }
 
 void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
@@ -421,10 +443,10 @@ void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, cons
 
 void Rtsp2Rtmp::StartStreaming()
 {
-	for (vector<RtspStream *>::iterator it = m_streams.begin(); it != m_streams.end(); ++it) {
-		cout << **it << "Start streaming ..." << endl;
-		(*it)->StartStreaming();
-	}
+        for (vector<RtspStream *>::iterator it = m_streams.begin(); it != m_streams.end(); ++it) {
+                cout << **it << "Start streaming ..." << endl;
+                (*it)->StartStreaming();
+        }
 }
 
 void Rtsp2Rtmp::StartEventLoop()
