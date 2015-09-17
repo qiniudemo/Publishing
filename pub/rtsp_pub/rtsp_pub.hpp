@@ -107,7 +107,12 @@ class Rtsp2Rtmp
 public:
         Rtsp2Rtmp(void);
         ~Rtsp2Rtmp(void);
+        void Add(const char *pName, const char*pRtspUrl, const char *pRtmpUrl);
+        void Run();
+private:
         void CreateStreamPair(const char *pName, const char *pRtspUrl, const char *pRtmpUrl);
+        void StartStreaming();
+        void StartEventLoop();
 private:
         vector<RtspStream*> m_streams;
         TaskScheduler* m_pScheduler;

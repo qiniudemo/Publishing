@@ -86,13 +86,13 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
                 }
                 break;
         default:
-                cout << "Error: NAL type not handled" << endl;
+                cout << *pRtsp << "Error: NAL type not handled" << endl;
 
         }
         if (bStatus != true) {
-                cout << "Error: NAL type " << nUnitType << " send error" << endl;
+                cout << *pRtsp << "Error: NAL type " << nUnitType << " send error" << endl;
         } else {
-                cout << "OK: NAL type " << nUnitType << " frame_size:" << _nFrameSize  << endl;
+                cout << *pRtsp << "OK: NAL type " << nUnitType << " frame_size:" << _nFrameSize  << endl;
         }
 
         continuePlaying();
@@ -167,7 +167,7 @@ void RtspStream::StartStreaming()
                 return;
         }
 
-        cout << *this << "Send describe command to " << this->rtspUrl << " ..." << endl;
+        cout << *this << "Send describe command to RTSP server: " << this->rtspUrl << " ..." << endl;
         sendDescribeCommand(RtspStream::OnAfterDescribe);
 }
 
@@ -402,13 +402,33 @@ Rtsp2Rtmp::~Rtsp2Rtmp(void)
         m_pScheduler = nullptr;
 }
 
+void Rtsp2Rtmp::Add(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
+{
+	CreateStreamPair(_pName, _pRtspUrl, _pRtmpUrl);
+}
+
+void Rtsp2Rtmp::Run()
+{
+	StartStreaming();
+	StartEventLoop();
+}
+
 void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
 {
         RtspStream *pRtsp = RtspStream::createNew(*m_pEnv, _pName, _pRtspUrl, _pRtmpUrl, RTSP_CLIENT_VERBOSITY_LEVEL, "PROG_NAME");
         m_streams.push_back(pRtsp);
-        pRtsp->StartStreaming();
+}
 
+void Rtsp2Rtmp::StartStreaming()
+{
+	for (vector<RtspStream *>::iterator it = m_streams.begin(); it != m_streams.end(); ++it) {
+		cout << **it << "Start streaming ..." << endl;
+		(*it)->StartStreaming();
+	}
+}
+
+void Rtsp2Rtmp::StartEventLoop()
+{
         // start event loop from here
         m_pEnv->taskScheduler().doEventLoop(&m_chEventLoopControl);
 }
-

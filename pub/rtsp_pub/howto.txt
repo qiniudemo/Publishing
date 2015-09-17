@@ -1,0 +1,22 @@
+### HOW TO BUILD IT UNDER WIN32
+
+Compiler: minGW32
+Platform: Windows32/64bit
+Library: OpenSSL & Zlib are needed by libRTMP
+
+Steps:
+1. Install IDE with minGW compiler integrated (code::blocks)
+2. Include following directories in the newly created project of IDE
+   1) /pub/, /pub/rtsp_pub
+   2) /live555/BasicUsageEnvironment, /live555/groupsock, /live555/liveMedia, /live555/UsageEnvironment
+   3) /rtmpdump/librtmp
+   4) path to the compiled DLLs of Openssl & Zlib along with header files
+3. begin to compile source code (/pub/* use C++11)
+4. check if all obj files are generated and start linking following files:
+   1) all obj files
+   2) compiled OpenSSL and Zlib DLLs and LIBs
+   3) set link options needed by windows applications
+      [1] -lws2_32 (win socket 2)
+      [2] -lwinmm
+5. link them all
+
