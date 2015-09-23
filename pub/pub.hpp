@@ -12,6 +12,7 @@
 #include <cstring>
 
 #define FILE_BUFFER_SIZE (1024 * 1024 * 15)
+#define DEFAULT_FPS 30
 #define FLV_CODECID_H264 7
 
 typedef struct _NalUnit
@@ -59,7 +60,7 @@ protected:
         bool SendH264Packet(const char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
         bool ReadOneNaluFromBuf(NalUnit & nalu);
         bool GetNextNalUnit(unsigned int nStart, unsigned int &nDelimiter, unsigned int &nNalu);
-        int SendPacket(unsigned int nPacketType, const char *data, unsigned int size, unsigned int nTimestamp);
+        bool SendPacket(unsigned int nPacketType, const char *data, unsigned int size, unsigned int nTimestamp);
         void PrintNalUnit(const NalUnit *pNalu);
         RTMP *m_pRtmp;
         char *m_pFileBuf;

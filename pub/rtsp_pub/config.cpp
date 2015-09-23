@@ -9,9 +9,7 @@ PubConfig::PubConfig()
 
 PubConfig::~PubConfig()
 {
-        if (m_pStreamManager != nullptr) {
-                delete m_pStreamManager;
-        }
+        delete m_pStreamManager;
 }
 
 int PubConfig::LoadConfigFile(const string &_path)

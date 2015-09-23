@@ -114,7 +114,9 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
         if (bStatus != true) {
                 cout << *pRtsp << "Error: NAL type " << nUnitType << " send error" << endl;
         } else {
+#ifdef __PRINT_EACH_RTSP_NALU__
                 cout << *pRtsp << "OK: NAL type " << nUnitType << " frame_size:" << _nFrameSize  << endl;
+#endif
         }
 
         continuePlaying();
@@ -167,9 +169,7 @@ RtspStream::RtspStream(UsageEnvironment& _env, const char* _name, const char* _r
 
 RtspStream::~RtspStream(void)
 {
-        if (pRtmpSender != nullptr) {
-                delete pRtmpSender;
-        }
+        delete pRtmpSender;
 }
 
 RtspStream* RtspStream::createNew(UsageEnvironment& _env, const char* _name, const char* _rtspUrl, const char* _rtmpUrl, 
@@ -183,7 +183,7 @@ void RtspStream::StartStreaming()
         bool bStatus;
 
         cout << *this<< "Connecting RTMP stream server: " << this->rtmpUrl << " ..." << endl;
-        bStatus = pRtmpSender->Connect();
+        bStatus = pRtmpSender->Connect(true);
         if (bStatus != true) {
                 cout << *this << "Connection failed to server: " << this->rtmpUrl << " ..." << endl;
                 return;
@@ -196,12 +196,12 @@ void RtspStream::StartStreaming()
 void RtspStream::OnAfterDescribe(RTSPClient* _pRtspClient, int _nResultCode, char* _pResultString)
 {
         UsageEnvironment& env = _pRtspClient->envir();
-        RtspStream* _pRtspStream = (RtspStream *)_pRtspClient;
-        StreamClientState& scs = _pRtspStream->scs;
+        RtspStream* pRtspStream = (RtspStream *)_pRtspClient;
+        StreamClientState& scs = pRtspStream->scs;
 
         do {
                 if (_nResultCode != 0) {
-                        cout << *_pRtspClient << "Failed to get a SDP description of " << _pRtspStream->name 
+                        cout << *_pRtspClient << "Failed to get a SDP description of " << pRtspStream->name
                              <<  ": " << _pResultString << endl;
                         delete[] _pResultString;
                         break;
@@ -213,7 +213,7 @@ void RtspStream::OnAfterDescribe(RTSPClient* _pRtspClient, int _nResultCode, cha
                 scs.session = MediaSession::createNew(env, sdpDescription);
                 delete[] sdpDescription;
                 if (scs.session == nullptr) {
-                        cout << *_pRtspClient << "Failed to create MediaSession for " << _pRtspStream->name << ":"
+                        cout << *_pRtspClient << "Failed to create MediaSession for " << pRtspStream->name << ":"
                              << env.getResultMsg() << endl;
                         break;
                 } else if (!scs.session->hasSubsessions()) {
@@ -227,6 +227,7 @@ void RtspStream::OnAfterDescribe(RTSPClient* _pRtspClient, int _nResultCode, cha
         } while(0);
 
         // shutdown
+        pRtspStream->pRtmpSender->Close();
         RtspStream::ShutdownStream(_pRtspClient);
 }
 
@@ -363,6 +364,8 @@ void RtspStream::OnAfterPlay(RTSPClient* _pRtspClient, int _nResultCode, char* _
 
         delete[] _pResultString;
         if (!bSuccess) {
+                RtspStream* pRtspStream = (RtspStream *)_pRtspClient;
+                pRtspStream->pRtmpSender->Close();
                 cout << *_pRtspClient << "In OnAfterPlay():Going to shutdown" << endl;
                 RtspStream::ShutdownStream(_pRtspClient);
         }
@@ -373,6 +376,9 @@ void RtspStream::StreamTimerHandler(void* _pClientData)
         RtspStream* pRtspStream = (RtspStream *)_pClientData;
         StreamClientState& scs = pRtspStream->scs;
         scs.streamTimerTask = nullptr;
+        if (pRtspStream->pRtmpSender != nullptr) {
+                pRtspStream->pRtmpSender->Close();
+        }
         RtspStream::ShutdownStream(pRtspStream);
 }
 
@@ -390,7 +396,9 @@ void RtspStream::OnSubsessionAfterPlaying(void* _pClientData)
                 if (pSubsession->sink != nullptr) 
                         return;
         }
-          RtspStream::ShutdownStream(pRtspClient);
+        RtspStream* pRtspStream = (RtspStream *)pRtspClient;
+        pRtspStream->pRtmpSender->Close();
+        RtspStream::ShutdownStream(pRtspClient);
 }
 
 void RtspStream::OnSubsessionByeHandler(void* _pClientData)

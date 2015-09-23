@@ -31,14 +31,14 @@ RtmpStream::~RtmpStream(void)
 
 bool RtmpStream::Connect(const char *_url)
 {
-        if (RTMP_SetupURL(m_pRtmp, (char *)_url) < 0) {
+        if (RTMP_SetupURL(m_pRtmp, (char *)_url) == 0) {
                 return false;
         }
         RTMP_EnableWrite(m_pRtmp);
-        if (RTMP_Connect(m_pRtmp, nullptr) < 0) {
+        if (RTMP_Connect(m_pRtmp, nullptr) == 0) {
                 return false;
         }
-        if (RTMP_ConnectStream(m_pRtmp, 0) < 0) {
+        if (RTMP_ConnectStream(m_pRtmp, 0) == 0) {
                 return false;
         }
         if (RTMP_IsConnected(m_pRtmp) == 0) {
@@ -56,7 +56,7 @@ void RtmpStream::Close()
         }
 }
 
-int RtmpStream::SendPacket(unsigned int _nPacketType, const char *_data, unsigned int _size, unsigned int _nTimestamp)
+bool RtmpStream::SendPacket(unsigned int _nPacketType, const char *_data, unsigned int _size, unsigned int _nTimestamp)
 {
         if (m_pRtmp == nullptr) {
                 return 0;
@@ -76,7 +76,10 @@ int RtmpStream::SendPacket(unsigned int _nPacketType, const char *_data, unsigne
 
         int nRet = RTMP_SendPacket(m_pRtmp, &packet, 0);
         RTMPPacket_Free(&packet);
-        return nRet;
+        if (nRet == 0) {
+                return false;
+        }
+        return true;
 }
 
 bool RtmpStream::SendMetadata(RtmpMetadata *_pMeta)
@@ -229,7 +232,7 @@ bool RtmpStream::SendH264File(const char *_pFileName)
         meta.nWidth = width;
         meta.nHeight = height;
         // TODO fps data from 264 stream
-        meta.nFrameRate = 30;
+        meta.nFrameRate = DEFAULT_FPS;
         m_nFrameRate = meta.nFrameRate;
 
         cout << "[debug] width=" << width << " height=" << height << endl;

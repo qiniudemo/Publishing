@@ -4,8 +4,46 @@
 
 using namespace std;
 
+#ifdef __STD_THREAD_SUPPORT__
+
+//
+// RtmpPacket for async mode only
+//
+
+RtmpPacket::RtmpPacket(const char *_pData, unsigned int _nLength, unsigned int _nTimestamp):
+        m_buffer(_pData, _pData + _nLength),
+        m_nTimestamp(_nTimestamp)
+{
+}
+
+char* RtmpPacket::GetBuffer()
+{
+        return m_buffer.data();
+}
+
+unsigned int RtmpPacket::GetSize()
+{
+        return m_buffer.size();
+}
+
+unsigned int RtmpPacket::GetTimestamp()
+{
+        return m_nTimestamp;
+}
+
+#endif // __STD_THREAD_SUPPORT__
+
+//
+// RtmpPacketSender
+//
+
 RtmpPacketSender::RtmpPacketSender(string &_url):
         m_publishUrl(_url)
+#ifdef __STD_THREAD_SUPPORT__
+        ,m_queue()
+        ,m_bIsAsync(false)
+        ,m_threads()
+#endif
 {
         SetStatus(UNINITIALIZED);
 
@@ -54,10 +92,54 @@ bool RtmpPacketSender::Connect()
         return true;
 }
 
+bool RtmpPacketSender::Connect(bool _bIsAsync)
+{
+        if (Connect() == false) {
+                return false;
+        }
+
+#ifdef __STD_THREAD_SUPPORT__
+        // async mode, all threads are managed inside
+        if (_bIsAsync == true) {
+                m_bIsAsync = true;
+                m_threads.push_back(thread(bind(&RtmpPacketSender::SenderLoop, this)));
+        }
+#endif
+        return true;
+}
+
 void RtmpPacketSender::Close()
 {
+#ifdef __STD_THREAD_SUPPORT__
+        StopAllThreads();
+#endif
         RtmpStream::Close();
 }
+
+#ifdef __STD_THREAD_SUPPORT__
+void RtmpPacketSender::StopAllThreads()
+{
+        // stop sender thread
+        if (m_bIsAsync == true) {
+                m_bExitNow = true;
+                for (auto &thr : m_threads) {
+                        thr.join();
+                }
+        }
+}
+
+void RtmpPacketSender::SenderLoop()
+{
+        while (m_bExitNow.load() == false) {
+                RtmpPacket packet(m_queue.Pop());
+                bool bStatus = SendPacket(RTMP_PACKET_TYPE_VIDEO, packet.GetBuffer(), packet.GetSize(), packet.GetTimestamp());
+                if (bStatus == false) {
+                        cout << "Error:packet not sent :" << m_publishUrl << endl;
+                }
+                cout << "Q_LEN #" << m_queue.Size() << " TS #" << packet.GetTimestamp() << " : " << m_publishUrl << endl;
+        }
+}
+#endif // __STD_THREAD_SUPPORT__
 
 void RtmpPacketSender::Sps(const char *_pData, unsigned int _nLength)
 {
@@ -92,7 +174,29 @@ void RtmpPacketSender::Sei(const char *_pData, unsigned int _nLength)
 bool RtmpPacketSender::SendIdrOnly(const char *_pData, unsigned int _nLength)
 {
         m_nTimestamp += (1000 / m_nFps);
-        return SendH264Packet(_pData, _nLength, true, m_nTimestamp);
+
+#ifdef __STD_THREAD_SUPPORT__
+        if (m_bIsAsync == true) {
+                int i = 0;
+                char *body = new char[_nLength + 9];
+
+                // key frame
+                body[i++] = 0x17;
+                body[i++] = 0x01;
+                body[i++] = 0x00;
+                body[i++] = 0x00;
+                body[i++] = 0x00;
+
+                i += WriteNalDataToBuffer(&body[i], _pData, _nLength);
+                m_queue.Push(RtmpPacket(body, i, m_nTimestamp));
+                delete[] body;
+                return true;
+        } else {
+#endif
+                return SendH264Packet(_pData, _nLength, true, m_nTimestamp);
+#ifdef __STD_THREAD_SUPPORT__
+        }
+#endif
 }
 
 bool RtmpPacketSender::SendConfig()
@@ -198,12 +302,22 @@ bool RtmpPacketSender::SendIdrAll(const char *_pData, unsigned int _nLength)
 
         // send and cleanup
         m_nTimestamp += (1000 / m_nFps);
-        bool bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
-        delete[] body;
-        ResetSps();
-        ResetPps();
-        ResetSei();
-        return bRet;
+
+#ifdef __STD_THREAD_SUPPORT__
+        if (m_bIsAsync == true) {
+                m_queue.Push(RtmpPacket(body, nSize, m_nTimestamp));
+                return true;
+        } else {
+#endif
+                bool bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
+                delete[] body;
+                ResetSps();
+                ResetPps();
+                ResetSei();
+                return bRet;
+#ifdef __STD_THREAD_SUPPORT__
+        }
+#endif
 }
 
 unsigned int RtmpPacketSender::WriteNalDataToBuffer(char *_pBuffer, const char *_pData, unsigned int _nLength)
@@ -229,7 +343,29 @@ unsigned int RtmpPacketSender::WriteNalUnitToBuffer(char *_pBuffer, NalUnit *_pN
 bool RtmpPacketSender::SendNonIdr(const char *_pData, unsigned int _nLength)
 {
         m_nTimestamp += (1000 / m_nFps);
-        return SendH264Packet(_pData, _nLength, false, m_nTimestamp);
+
+#ifdef __STD_THREAD_SUPPORT__
+        if (m_bIsAsync == true) {
+                int i = 0;
+                char *body = new char[_nLength + 9];
+
+                // not a key frame
+                body[i++] = 0x27;
+                body[i++] = 0x01;
+                body[i++] = 0x00;
+                body[i++] = 0x00;
+                body[i++] = 0x00;
+
+                i += WriteNalDataToBuffer(&body[i], _pData, _nLength);
+                m_queue.Push(RtmpPacket(body, i, m_nTimestamp));
+                delete[] body;
+                return true;
+        } else {
+#endif
+                return SendH264Packet(_pData, _nLength, false, m_nTimestamp);
+#ifdef __STD_THREAD_SUPPORT__
+        }
+#endif
 }
 
 void RtmpPacketSender::SetStatus(RtmpPacketSenderStatusType _nStatus)

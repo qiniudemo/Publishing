@@ -16,6 +16,9 @@
 
 using namespace std;
 
+// switches
+//#define __PRINT_EACH_RTSP_NALU__
+
 //
 // define a state class to current save stream info
 //
@@ -95,7 +98,7 @@ private:
         u_int8_t* m_pReceiveBuffer;
         MediaSubsession& m_subsession;
         string m_streamId;
-	bool m_bIsConfigSent;
+        bool m_bIsConfigSent;
 };
 
 
