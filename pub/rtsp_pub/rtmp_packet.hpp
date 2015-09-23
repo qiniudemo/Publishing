@@ -2,7 +2,7 @@
 #define __FLV_PACKET_HPP__
 
 // switches
-#define __STD_THREAD_SUPPORT__
+//#define __STD_THREAD_SUPPORT__
 
 #include "pub.hpp"
 #include "queue.hpp"

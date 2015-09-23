@@ -43,7 +43,10 @@ void RtspSink::OnGettingFrame(void* _pClientData, unsigned int _nFrameSize, unsi
                               struct timeval _presentationTime, unsigned int _durationInMicroseconds)
 {
         RtspSink* pSink = (RtspSink *)_pClientData;
-        pSink->GetNextFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+        cout << pSink->m_subsession.mediumName() << " " << pSink->m_subsession.codecName() << endl;
+        if (strcmp(pSink->m_subsession.mediumName(), "video") == 0 && strcmp(pSink->m_subsession.codecName(), "H264") == 0) {
+                pSink->GetNextFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+        }
 }
 
 void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
