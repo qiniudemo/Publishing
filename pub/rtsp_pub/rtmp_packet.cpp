@@ -130,13 +130,18 @@ void RtmpPacketSender::StopAllThreads()
 
 void RtmpPacketSender::SenderLoop()
 {
+        unsigned int nIntval = 0;
+
         while (m_bExitNow.load() == false) {
                 RtmpPacket packet(m_queue.Pop());
                 bool bStatus = SendPacket(RTMP_PACKET_TYPE_VIDEO, packet.GetBuffer(), packet.GetSize(), packet.GetTimestamp());
                 if (bStatus == false) {
                         cout << "Error:packet not sent :" << m_publishUrl << endl;
+                        // TODO reconnect and send configuration
                 }
+#ifdef __PRINT_QUEUE_STATE__
                 cout << "Q_LEN #" << m_queue.Size() << " TS #" << packet.GetTimestamp() << " : " << m_publishUrl << endl;
+#endif
         }
 }
 #endif // __STD_THREAD_SUPPORT__
@@ -266,6 +271,7 @@ bool RtmpPacketSender::SendIdrAll(const char *_pData, unsigned int _nLength)
         int nSize = m_sps.size + m_pps.size + m_sei.size + _nLength + 5 + nNalUnitNum * 4;
         char *body = new char[nSize];
         int i = 0;
+        bool bRet;
 
         //
         // header (5bytes)
@@ -306,18 +312,19 @@ bool RtmpPacketSender::SendIdrAll(const char *_pData, unsigned int _nLength)
 #ifdef __STD_THREAD_SUPPORT__
         if (m_bIsAsync == true) {
                 m_queue.Push(RtmpPacket(body, nSize, m_nTimestamp));
-                return true;
+                bRet = true;
         } else {
 #endif
-                bool bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
-                delete[] body;
+                bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
+                // refresh SPS
                 ResetSps();
                 ResetPps();
                 ResetSei();
-                return bRet;
 #ifdef __STD_THREAD_SUPPORT__
         }
 #endif
+        delete[] body;
+        return bRet;
 }
 
 unsigned int RtmpPacketSender::WriteNalDataToBuffer(char *_pBuffer, const char *_pData, unsigned int _nLength)

@@ -43,7 +43,9 @@ void RtspSink::OnGettingFrame(void* _pClientData, unsigned int _nFrameSize, unsi
                               struct timeval _presentationTime, unsigned int _durationInMicroseconds)
 {
         RtspSink* pSink = (RtspSink *)_pClientData;
+#ifdef __PRINT_CODEC_INFO__
         cout << pSink->m_subsession.mediumName() << " " << pSink->m_subsession.codecName() << endl;
+#endif
         if (strcmp(pSink->m_subsession.mediumName(), "video") == 0 && strcmp(pSink->m_subsession.codecName(), "H264") == 0) {
                 pSink->GetNextFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
         }
@@ -109,6 +111,22 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
                 break;
         case 0x8:
                 pRtmp->Pps((char *)m_pReceiveBuffer, _nFrameSize);
+
+                // OK, this is just my assumption that after we fail to get configurations from
+                // m_subsession.fmtp_spropparametersets() (what the hell..) we need have a backup
+                // plan to send configuration, so SPS should be always followed by PPS
+                if (m_bIsConfigSent == false) {
+                        // try
+                        cout << *pRtsp << "received PPS and try to send configuration again ..." << endl;
+                        bStatus = pRtmp->SendConfig();
+                        if (bStatus == false) {
+                                cout << *pRtsp << "Configuration not sent" << endl;
+                                return;
+                        } else {
+                                cout << *pRtsp << "Configuration sent ..." << endl;
+                                m_bIsConfigSent = true;
+                        }
+                }
                 break;
         default:
                 cout << *pRtsp << "Error: NAL type not handled" << endl;

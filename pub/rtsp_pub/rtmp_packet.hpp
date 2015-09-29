@@ -2,7 +2,8 @@
 #define __FLV_PACKET_HPP__
 
 // switches
-//#define __STD_THREAD_SUPPORT__
+#define __STD_THREAD_SUPPORT__
+//#define __PRINT_QUEUE_STATE__ // no, peformance issue
 
 #include "pub.hpp"
 #include "queue.hpp"

@@ -2,6 +2,10 @@
 // rtsp2rtmp
 //
 
+// switches
+//#define __PRINT_EACH_RTSP_NALU__
+//#define __PRINT_CODEC_INFO__
+
 #ifndef __RTSP_PUB_HPP__
 #define __RTSP_PUB_HPP__
 
@@ -15,9 +19,6 @@
 #include <vector>
 
 using namespace std;
-
-// switches
-//#define __PRINT_EACH_RTSP_NALU__
 
 //
 // define a state class to current save stream info
