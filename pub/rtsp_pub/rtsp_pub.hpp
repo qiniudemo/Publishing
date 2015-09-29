@@ -54,6 +54,7 @@ public:
                                      portNumBits tunnelOverHTTPPortNum = 0);
         void StartStreaming(void);
         friend ostream& operator<< (ostream &os, const RTSPClient& rtspClient);
+        friend ostream& operator<< (ostream &os, const RtspStream& rtspStream);
 protected:
         RtspStream(UsageEnvironment& env, const char *name, const char* rtspUrl, const char *rtmpUrl, int verbosityLevel, const char* applicationName, 
                    portNumBits tunnelOverHTTPPortNum);
@@ -91,8 +92,12 @@ private:
         virtual ~RtspSink();
         static void OnGettingFrame(void* pClientData, unsigned int nFrameSize, unsigned int nTruncatedBytes,
                                    struct timeval presentationTime, unsigned int durationInMicroseconds);
-        void GetNextFrame(unsigned int nFrameSize, unsigned int nTruncatedBytes,
-                          struct timeval presentationTime, unsigned int durationInMicroseconds);
+        void GetNextH264Frame(unsigned int nFrameSize, unsigned int nTruncatedBytes,
+                              struct timeval presentationTime, unsigned int durationInMicroseconds);
+        void GetNextPcmaFrame(unsigned int nFrameSize, unsigned int nTruncatedBytes,
+                              struct timeval presentationTime, unsigned int durationInMicroseconds);
+        void GetNextPcmuFrame(unsigned int nFrameSize, unsigned int nTruncatedBytes,
+                              struct timeval presentationTime, unsigned int durationInMicroseconds);
 private:
         virtual Boolean continuePlaying();
 private:

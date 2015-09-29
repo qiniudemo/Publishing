@@ -196,12 +196,10 @@ bool RtmpPacketSender::SendIdrOnly(const char *_pData, unsigned int _nLength)
                 m_queue.Push(RtmpPacket(body, i, m_nTimestamp));
                 delete[] body;
                 return true;
-        } else {
-#endif
-                return SendH264Packet(_pData, _nLength, true, m_nTimestamp);
-#ifdef __STD_THREAD_SUPPORT__
         }
 #endif
+
+        return SendH264Packet(_pData, _nLength, true, m_nTimestamp);
 }
 
 bool RtmpPacketSender::SendConfig()
@@ -312,17 +310,17 @@ bool RtmpPacketSender::SendIdrAll(const char *_pData, unsigned int _nLength)
 #ifdef __STD_THREAD_SUPPORT__
         if (m_bIsAsync == true) {
                 m_queue.Push(RtmpPacket(body, nSize, m_nTimestamp));
-                bRet = true;
-        } else {
-#endif
-                bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
-                // refresh SPS
-                ResetSps();
-                ResetPps();
-                ResetSei();
-#ifdef __STD_THREAD_SUPPORT__
+                delete[] body;
+                return true;
         }
 #endif
+
+        bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO, body, nSize, m_nTimestamp);
+        // refresh SPS
+        ResetSps();
+        ResetPps();
+        ResetSei();
+
         delete[] body;
         return bRet;
 }
@@ -367,12 +365,10 @@ bool RtmpPacketSender::SendNonIdr(const char *_pData, unsigned int _nLength)
                 m_queue.Push(RtmpPacket(body, i, m_nTimestamp));
                 delete[] body;
                 return true;
-        } else {
-#endif
-                return SendH264Packet(_pData, _nLength, false, m_nTimestamp);
-#ifdef __STD_THREAD_SUPPORT__
         }
 #endif
+
+        return SendH264Packet(_pData, _nLength, false, m_nTimestamp);
 }
 
 void RtmpPacketSender::SetStatus(RtmpPacketSenderStatusType _nStatus)

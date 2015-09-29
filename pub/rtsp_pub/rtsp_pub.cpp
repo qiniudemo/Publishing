@@ -46,12 +46,20 @@ void RtspSink::OnGettingFrame(void* _pClientData, unsigned int _nFrameSize, unsi
 #ifdef __PRINT_CODEC_INFO__
         cout << pSink->m_subsession.mediumName() << " " << pSink->m_subsession.codecName() << endl;
 #endif
-        if (strcmp(pSink->m_subsession.mediumName(), "video") == 0 && strcmp(pSink->m_subsession.codecName(), "H264") == 0) {
-                pSink->GetNextFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+        if (strcmp(pSink->m_subsession.mediumName(), "video") == 0) {
+                if (strcmp(pSink->m_subsession.codecName(), "H264") == 0) {
+                        pSink->GetNextH264Frame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+                }
+        } else if (strcmp(pSink->m_subsession.mediumName(), "audio") == 0) {
+                if (strcmp(pSink->m_subsession.codecName(), "PCMA") == 0) {
+                        pSink->GetNextPcmaFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+                } else if (strcmp(pSink->m_subsession.codecName(), "PCMU") == 0) {
+                        pSink->GetNextPcmuFrame(_nFrameSize, _nTruncatedBytes, _presentationTime, _durationInMicroseconds);
+                }
         }
 }
 
-void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
+void RtspSink::GetNextH264Frame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
                             struct timeval _presentationTime, unsigned int _durationInMicroseconds)
 {
         bool bStatus = true;
@@ -143,6 +151,18 @@ void RtspSink::GetNextFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBy
         continuePlaying();
 }
 
+void RtspSink::GetNextPcmaFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
+                                struct timeval _presentationTime, unsigned int _durationInMicroseconds)
+{
+        continuePlaying();
+}
+
+void RtspSink::GetNextPcmuFrame(unsigned int _nFrameSize, unsigned int _nTruncatedBytes,
+                                struct timeval _presentationTime, unsigned int _durationInMicroseconds)
+{
+        continuePlaying();
+}
+
 //
 // Stream Client State
 //
@@ -169,6 +189,12 @@ StreamClientState::~StreamClientState()
 ostream& operator<< (ostream &_os, const RTSPClient& _rtspClient)
 {
         _os << "[" << _rtspClient.url() << "]";
+        return _os;
+}
+
+ostream& operator<< (ostream &_os, const RtspStream& _rtspStream)
+{
+        _os << "[" << _rtspStream.rtspUrl.c_str() << " -> " << _rtspStream.rtmpUrl.c_str() << "]";
         return _os;
 }
 
