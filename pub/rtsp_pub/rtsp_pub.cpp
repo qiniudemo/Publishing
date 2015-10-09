@@ -142,6 +142,16 @@ void RtspSink::GetNextH264Frame(unsigned int _nFrameSize, unsigned int _nTruncat
         }
         if (bStatus != true) {
                 cout << *pRtsp << "Error: NAL type " << nUnitType << " send error" << endl;
+
+                // when ExitOnError flag is set
+                if (pRtsp->bExitOnError) {
+                        if (pRtsp->pMgmtPtr != nullptr) {
+                                pRtsp->pMgmtPtr->Stop();
+                        } else {
+                                cout << *pRtsp << "Error: Could not stop event loop, exit anyway" << endl;
+                                exit(RTSP_EXIT_CONNECTION);
+                        }
+                }
         } else {
 #ifdef __PRINT_EACH_RTSP_NALU__
                 cout << *pRtsp << "OK: NAL type " << nUnitType << " frame_size:" << _nFrameSize  << endl;
@@ -213,6 +223,7 @@ RtspStream::RtspStream(UsageEnvironment& _env, const char* _name, const char* _r
         rtspUrl = _rtspUrl;
         pRtmpSender = new RtmpPacketSender(rtmpUrl);
         bExitOnError = false;
+        pMgmtPtr = nullptr;
 }
 
 RtspStream::~RtspStream(void)
@@ -239,6 +250,21 @@ void RtspStream::StartStreaming()
 
         cout << *this << "Send describe command to RTSP server: " << this->rtspUrl << " ..." << endl;
         sendDescribeCommand(RtspStream::OnAfterDescribe);
+}
+
+void RtspStream::StopStreaming()
+{
+        // this is tricky, if ExitOnError is set we just notify Rtsp2Rtmp(pMgmtPtr) object to stop event loop and
+        // Rtsp2Rtmp::StopStreaming will be responsible for calling RtspStream::ShutdownStream for each stream
+        // Notice: do never call RtspStream::ShutdownStream for the same RTSPClient* twice, otherwise core dump
+        if (bExitOnError) {
+                pMgmtPtr->Stop();
+        } else {
+                if (pRtmpSender != nullptr) {
+                        pRtmpSender->Close();
+                }
+                RtspStream::ShutdownStream((RTSPClient *)this);
+        }
 }
 
 void RtspStream::OnAfterDescribe(RTSPClient* _pRtspClient, int _nResultCode, char* _pResultString)
@@ -274,9 +300,7 @@ void RtspStream::OnAfterDescribe(RTSPClient* _pRtspClient, int _nResultCode, cha
                 return;
         } while(0);
 
-        // shutdown
-        pRtspStream->pRtmpSender->Close();
-        RtspStream::ShutdownStream(_pRtspClient);
+        pRtspStream->StopStreaming();
 }
 
 void RtspStream::ShutdownStream(RTSPClient* _pRtspClient, int _nExitCode)
@@ -413,9 +437,8 @@ void RtspStream::OnAfterPlay(RTSPClient* _pRtspClient, int _nResultCode, char* _
         delete[] _pResultString;
         if (!bSuccess) {
                 RtspStream* pRtspStream = (RtspStream *)_pRtspClient;
-                pRtspStream->pRtmpSender->Close();
                 cout << *_pRtspClient << "In OnAfterPlay():Going to shutdown" << endl;
-                RtspStream::ShutdownStream(_pRtspClient);
+                pRtspStream->StopStreaming();
         }
 }
 
@@ -424,10 +447,7 @@ void RtspStream::StreamTimerHandler(void* _pClientData)
         RtspStream* pRtspStream = (RtspStream *)_pClientData;
         StreamClientState& scs = pRtspStream->scs;
         scs.streamTimerTask = nullptr;
-        if (pRtspStream->pRtmpSender != nullptr) {
-                pRtspStream->pRtmpSender->Close();
-        }
-        RtspStream::ShutdownStream(pRtspStream);
+        pRtspStream->StopStreaming();
 }
 
 void RtspStream::OnSubsessionAfterPlaying(void* _pClientData)
@@ -445,8 +465,7 @@ void RtspStream::OnSubsessionAfterPlaying(void* _pClientData)
                         return;
         }
         RtspStream* pRtspStream = (RtspStream *)pRtspClient;
-        pRtspStream->pRtmpSender->Close();
-        RtspStream::ShutdownStream(pRtspClient);
+        pRtspStream->StopStreaming();
 }
 
 void RtspStream::OnSubsessionByeHandler(void* _pClientData)
@@ -489,12 +508,29 @@ void Rtsp2Rtmp::Run()
 {
         StartStreaming();
         StartEventLoop();
+        StopStreaming();
+}
+
+void Rtsp2Rtmp::Stop()
+{
+        m_chEventLoopControl = 1;
+}
+
+void Rtsp2Rtmp::StopStreaming()
+{
+        for (auto it = m_streams.begin(); it != m_streams.end(); ++it) {
+                cout << **it << "Stop streaming ..." << endl;
+                (*it)->StopStreaming();
+        }
+        cout << endl << "Stopped !" << endl;
+        exit(RTSP_EXIT_CONNECTION);
 }
 
 void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl, bool _bExitOnError)
 {
         RtspStream *pRtsp = RtspStream::createNew(*m_pEnv, _pName, _pRtspUrl, _pRtmpUrl, RTSP_CLIENT_VERBOSITY_LEVEL, "PROG_NAME");
         pRtsp->bExitOnError = _bExitOnError;
+        pRtsp->pMgmtPtr = this;
         m_streams.push_back(pRtsp);
 }
 

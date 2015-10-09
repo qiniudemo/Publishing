@@ -47,7 +47,7 @@ static int usage(const char *_pProgName)
         cout << "Usage: " << endl;
         cout << "  " << _pProgName << " <rtsp://xxxx> <rtmp://xxxx>" << endl;
         cout << "  " << _pProgName << " -d <path_to_config_file>" << endl;
-        exit(1);
+        exit(RTSP_EXIT_USAGE);
 }
 
 static bool array_find_str(const char **_pArray, const char *_pOption)
@@ -93,7 +93,7 @@ static void parse_kv(const char *_pOption, const char *_pValue)
 
 static void parse_switch(const char *_pOption)
 {
-        if (strcmp(_pOption, "-e")) {
+        if (strcmp(_pOption, "-e") == 0) {
                 gbFlagExitOnError = true;
         }
 }
@@ -121,10 +121,10 @@ int main(int argc, char** argv)
                 int nStatus = do_action();
                 switch (nStatus) {
                 case -1:
-                        exit(1);
+                        exit(RTSP_EXIT_USAGE);
                         break;
                 default:
-                        exit(0);
+                        exit(RTSP_EXIT_NORMAL);
                 }
         } else {
                 usage(gProgName.c_str());

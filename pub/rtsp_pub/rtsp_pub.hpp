@@ -20,6 +20,12 @@
 
 using namespace std;
 
+// when RtspStream::bExitOnError is set, process will bail out with
+// specified exit codes defined
+#define RTSP_EXIT_NORMAL      0
+#define RTSP_EXIT_USAGE       1
+#define RTSP_EXIT_CONNECTION  2
+
 //
 // define a state class to current save stream info
 //
@@ -43,6 +49,9 @@ public:
 // RtspStream
 //
 
+// forward declaration
+class Rtsp2Rtmp;
+
 #define RTSP_CLIENT_VERBOSITY_LEVEL 0
 #define REQUEST_STREAMING_OVER_TCP False
 
@@ -53,6 +62,7 @@ public:
                                      int verbosityLevel = 0, const char* applicationName = nullptr, 
                                      portNumBits tunnelOverHTTPPortNum = 0);
         void StartStreaming(void);
+        void StopStreaming(void);
         friend ostream& operator<< (ostream &os, const RTSPClient& rtspClient);
         friend ostream& operator<< (ostream &os, const RtspStream& rtspStream);
 protected:
@@ -75,6 +85,7 @@ public:
         StreamClientState scs;
         RtmpPacketSender *pRtmpSender;
         bool bExitOnError;
+        Rtsp2Rtmp *pMgmtPtr;
 };
 
 
@@ -120,10 +131,12 @@ public:
         ~Rtsp2Rtmp(void);
         void Add(const char *pName, const char *pRtspUrl, const char *pRtmpUrl, bool bExitOnError = false);
         void Run();
+        void Stop();
 private:
         void CreateStreamPair(const char *pName, const char *pRtspUrl, const char *pRtmpUrl, bool bExitOnError = false);
         void StartStreaming();
         void StartEventLoop();
+        void StopStreaming();
 private:
         vector<RtspStream*> m_streams;
         TaskScheduler* m_pScheduler;
