@@ -5,6 +5,7 @@ PubConfig::PubConfig()
 {
         m_filePath = "";
         m_pStreamManager = new Rtsp2Rtmp;
+        m_bExitOnError = false;
 }
 
 PubConfig::~PubConfig()
@@ -12,7 +13,7 @@ PubConfig::~PubConfig()
         delete m_pStreamManager;
 }
 
-int PubConfig::LoadConfigFile(const string &_path)
+int PubConfig::LoadConfigFile(const string &_path, bool _bExitOnError)
 {
         // sanity check
         if (_path.empty() == true) {
@@ -58,7 +59,7 @@ int PubConfig::LoadConfigFile(const string &_path)
                 bStatus = ParseOneLine(pBuffer, &pName, &pSrc, &pDst);
                 if (bStatus == true) {
                         nLineLoaded++;
-                        m_pStreamManager->Add(pName, pSrc, pDst);
+                        m_pStreamManager->Add(pName, pSrc, pDst, _bExitOnError);
                 } else {
                         cout << "Error: line " << nLineNo << " invalid entry: [" << pBuffer << "]" << endl;
                 }

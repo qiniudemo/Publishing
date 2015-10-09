@@ -74,6 +74,7 @@ public:
         string rtspUrl;
         StreamClientState scs;
         RtmpPacketSender *pRtmpSender;
+        bool bExitOnError;
 };
 
 
@@ -117,10 +118,10 @@ class Rtsp2Rtmp
 public:
         Rtsp2Rtmp(void);
         ~Rtsp2Rtmp(void);
-        void Add(const char *pName, const char*pRtspUrl, const char *pRtmpUrl);
+        void Add(const char *pName, const char *pRtspUrl, const char *pRtmpUrl, bool bExitOnError = false);
         void Run();
 private:
-        void CreateStreamPair(const char *pName, const char *pRtspUrl, const char *pRtmpUrl);
+        void CreateStreamPair(const char *pName, const char *pRtspUrl, const char *pRtmpUrl, bool bExitOnError = false);
         void StartStreaming();
         void StartEventLoop();
 private:

@@ -13,7 +13,7 @@ class PubConfig
 public:
         PubConfig();
         ~PubConfig();
-        int LoadConfigFile(const string &path);
+        int LoadConfigFile(const string &path, bool bExitOnError = false);
         static bool IsRtspUrl(const char *_pUrl);
         static bool IsRtmpUrl(const char *_pUrl);
         void Run();
@@ -21,6 +21,7 @@ private:
         bool ParseOneLine(char *pBuffer, const char **pName, const char **pSrc, const char **pDst);
         string m_filePath;
         Rtsp2Rtmp *m_pStreamManager;
+        bool m_bExitOnError;
 };
 
 #endif

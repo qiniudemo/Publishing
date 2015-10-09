@@ -212,6 +212,7 @@ RtspStream::RtspStream(UsageEnvironment& _env, const char* _name, const char* _r
         rtmpUrl = _rtmpUrl;
         rtspUrl = _rtspUrl;
         pRtmpSender = new RtmpPacketSender(rtmpUrl);
+        bExitOnError = false;
 }
 
 RtspStream::~RtspStream(void)
@@ -479,9 +480,9 @@ Rtsp2Rtmp::~Rtsp2Rtmp(void)
         m_pScheduler = nullptr;
 }
 
-void Rtsp2Rtmp::Add(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
+void Rtsp2Rtmp::Add(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl, bool _bExitOnError)
 {
-        CreateStreamPair(_pName, _pRtspUrl, _pRtmpUrl);
+        CreateStreamPair(_pName, _pRtspUrl, _pRtmpUrl, _bExitOnError);
 }
 
 void Rtsp2Rtmp::Run()
@@ -490,9 +491,10 @@ void Rtsp2Rtmp::Run()
         StartEventLoop();
 }
 
-void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl)
+void Rtsp2Rtmp::CreateStreamPair(const char *_pName, const char *_pRtspUrl, const char *_pRtmpUrl, bool _bExitOnError)
 {
         RtspStream *pRtsp = RtspStream::createNew(*m_pEnv, _pName, _pRtspUrl, _pRtmpUrl, RTSP_CLIENT_VERBOSITY_LEVEL, "PROG_NAME");
+        pRtsp->bExitOnError = _bExitOnError;
         m_streams.push_back(pRtsp);
 }
 
