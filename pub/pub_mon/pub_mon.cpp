@@ -15,7 +15,7 @@ ostream& operator<< (ostream &_os, const ProcEntry& _entry)
         return _os;
 }
 
-ProcEntry::ProcEntry(char *_pCommand):
+ProcEntry::ProcEntry(const char *_pCommand):
         m_command(_pCommand),
         m_policyTable()
 {
@@ -34,7 +34,7 @@ void ProcEntry::AddPolicy(int _nExitCode, unsigned int _nPolicyId)
         m_policyTable.push_back(make_pair(_nExitCode, _nPolicyId));
 }
 
-void ProcEntry::AddPolicy(char *_pPolicy)
+void ProcEntry::AddPolicy(const char *_pPolicy)
 {
         string line = _pPolicy;
         size_t nFoundPos;
@@ -119,46 +119,45 @@ int PubMonitor::LoadConfig(const char *_pPath)
 
         m_confPath = _pPath;
 
-        // open confiuration file
-        FILE *fp = fopen(_pPath, "r");
-        if (fp == nullptr) {
-                cout << "Cannot open file :" << _pPath << endl;
+        // open configuration file
+        ifstream fileObject(_pPath);
+        if (!fileObject.is_open()) {
+                cout << "Error: cannot open file :" << _pPath << endl;
                 return -1;
         }
-        fseek(fp, 0, SEEK_SET);
 
-        char pBuffer[CONFIG_MAX_CHAR_EACH_LINE];
         unsigned int nLine = 0, nValidLine = 0;
         ProcEntry *pEntry = nullptr;
+        string line;
 
-        memset(pBuffer, 0, CONFIG_MAX_CHAR_EACH_LINE);
-        while (fgets(pBuffer, CONFIG_MAX_CHAR_EACH_LINE, fp)) {
+        while (getline(fileObject, line)) {
                 nLine++;
 
-                if (!IsValidLine(pBuffer)) {
+                if (!IsValidLine(line.c_str())) {
                         continue;
                 }
                 nValidLine++;
 
                 // command line
                 if (nValidLine % 2 != 0) {
-                        pEntry = new ProcEntry(pBuffer);
+                        pEntry = new ProcEntry(line.c_str());
                         cout << "Info: loading entry [" << *pEntry << "] ..." << endl;
                 }
                 // policy line
                 if (nValidLine % 2 == 0) {
                         if (pEntry != nullptr) {
-                                pEntry->AddPolicy(pBuffer);
+                                pEntry->AddPolicy(line.c_str());
                                 AddEntry(pEntry);
-                                cout << "Info: entry [" << *pEntry << "] was added" << endl;
+                                cout << "Info: entry [" << *pEntry << "] is loaded" << endl;
                         }
                         pEntry = nullptr;
                 }
         }
+        fileObject.close();
         return nValidLine / 2;
 }
 
-bool PubMonitor::IsValidLine(char *_pLine)
+bool PubMonitor::IsValidLine(const char *_pLine)
 {
         int nLength = strlen(_pLine);
 
@@ -173,7 +172,7 @@ bool PubMonitor::IsValidLine(char *_pLine)
 
         // line with spaces and tabs only
         for (int i = 0; i < nLength; i++) {
-                if (_pLine[i] != ' ' && _pLine[i] != '\t') {
+                if (_pLine[i] != ' ' && _pLine[i] != '\t' && _pLine[i] != '\r' && _pLine[i] != '\n') {
                         return true;
                 }
         }

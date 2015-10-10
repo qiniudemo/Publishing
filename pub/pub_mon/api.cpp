@@ -40,11 +40,17 @@ int OSIAPI::WaitForAllThreads()
 #else
 int OSIAPI::RunThread(void (*_pFunction)(void*), void *_pParameter)
 {
+        std::cout << "Notice: posix threading is not supported now" << endl;
+        exit(1);
+
         return 0;
 }
 
 int OSIAPI::WaitForAllThreads()
 {
+        std::cout << "Notice: posix waiting is not supported now" << endl;
+        exit(1);
+
         return 0;
 }
 #endif

@@ -2,9 +2,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <cstdio>
+#include <fstream>
 #include <cstring>
-#include <cstdlib>
 
 #include "api.hpp"
 
@@ -23,9 +22,9 @@ typedef struct _Policy
 class ProcEntry
 {
 public:
-        ProcEntry(char *pCommand);
+        ProcEntry(const char *pCommand);
         void AddPolicy(int nExitCode, unsigned int nPolicyId);
-        void AddPolicy(char *pPolicy);
+        void AddPolicy(const char *pPolicy);
         void Print();
         int Run();
         friend ostream& operator<< (ostream &os, const ProcEntry& entry);
@@ -37,7 +36,6 @@ private:
         vector< pair<int, unsigned int> > m_policyTable;
 };
 
-#define CONFIG_MAX_CHAR_EACH_LINE 256
 class PubMonitor
 {
 public:
@@ -48,7 +46,7 @@ public:
         void PrintTable();
 private:
         void AddEntry(ProcEntry *pEntry);
-        bool IsValidLine(char *pLine);
+        bool IsValidLine(const char *pLine);
         static void MonitorThread(void *pParam);
 
         string m_confPath;

@@ -22,7 +22,7 @@ int main(int argc, char** argv)
                 exit(1);
         }
 
-        cout << "Info: " << nStatus << " entrie(s) loaded" << endl;
+        cout << "Info: loaded " << nStatus << " entrie(s) ..." << endl;
 #ifdef __PRINT_TABLE__
         conf.PrintTable();
 #endif
