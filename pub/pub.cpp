@@ -310,6 +310,14 @@ bool RtmpStream::ReadOneNaluFromBuf(NalUnit &nalu)
         return false;
 }
 
+bool RtmpStream::SendAdpcmFile(const char *_pFileName)
+{
+}
+
+bool RtmpStream::SendAacFile(const char *_pFileName)
+{
+}
+
 void RtmpStream::PrintNalUnit(const NalUnit *_pNalu)
 {
         cout << "[NALU] pos=" << m_nCurPos << " type=" << _pNalu->type

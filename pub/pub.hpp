@@ -54,7 +54,8 @@ public:
         bool Connect(const char *url);
         void Close();
         bool SendH264File(const char *pFileName);
-
+	bool SendAdpcmFile(const char *pFileName);
+	bool SendAacFile(const char *pFileName);
 protected:
         bool SendMetadata(RtmpMetadata * pMeta);
         bool SendH264Packet(const char *data, unsigned int size, bool bIsKeyFrame, unsigned int nTimeStamp);
