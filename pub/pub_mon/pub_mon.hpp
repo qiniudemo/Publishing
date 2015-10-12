@@ -10,7 +10,10 @@
 using namespace std;
 
 typedef enum _PType {
-        POLICY_RESPAWN
+        POLICY_RESPAWN,
+        POLICY_RESPAWN_INTERVAL,
+        POLICY_RESPAWN_LIMITS,
+        POLICY_RESPAWN_FORCE
 } PType;
 
 typedef struct _Policy
@@ -19,6 +22,7 @@ typedef struct _Policy
         const char *pOptionName;
 } Policy;
 
+#define RESPAWN_DEFAULT_INTERVAL 5 // seconds
 class ProcEntry
 {
 public:
@@ -27,6 +31,7 @@ public:
         void AddPolicy(const char *pPolicy);
         void Print();
         int Run();
+        bool CheckRespawn(int nExitCode, unsigned int nRetry, unsigned int& nInterval);
         friend ostream& operator<< (ostream &os, const ProcEntry& entry);
 private:
         // policy strings

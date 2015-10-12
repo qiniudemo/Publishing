@@ -6,7 +6,10 @@
 
 Policy ProcEntry::m_policy[] = 
 { 
-        { POLICY_RESPAWN, "respawn=" } 
+        { POLICY_RESPAWN,          "respawn=" },
+        { POLICY_RESPAWN_INTERVAL, "interval="},
+        { POLICY_RESPAWN_LIMITS,   "max_retry="},
+        { POLICY_RESPAWN_FORCE,    "force="}
 };
 
 ostream& operator<< (ostream &_os, const ProcEntry& _entry)
@@ -83,7 +86,7 @@ void ProcEntry::Print()
         cout << "command: " << m_command << endl;
         cout << "policy : " << endl;
         for_each(m_policyTable.begin(), m_policyTable.end(), [](const pair<int, unsigned int> policyPair) {
-                cout << "  value:" << policyPair.first << " action:" << policyPair.second << endl;
+                cout << " action:" << policyPair.second << "  value:" << policyPair.first << endl;
         });
 }
 
@@ -92,6 +95,44 @@ int ProcEntry::Run()
         int nRetVal = OSIAPI::RunCommand(m_command.c_str());
         cout << "Process [" << m_command << "] terminated with exit code = " << nRetVal << endl;
         return nRetVal;
+}
+
+bool ProcEntry::CheckRespawn(int _nExitCode, unsigned int _nRetry, unsigned int& _nInterval)
+{
+        // default policy values
+        bool bNeedRespawn = false;
+        bool bForceRespawn = false;
+        bool bReachMaxRetry = false;
+        _nInterval = RESPAWN_DEFAULT_INTERVAL;
+
+        for (auto it = m_policyTable.begin(); it != m_policyTable.end(); it++) {
+                switch ((*it).second) {
+                case POLICY_RESPAWN:
+                        if ((*it).first == _nExitCode) {
+                                bNeedRespawn = true;
+                        }
+                        break;
+                case POLICY_RESPAWN_INTERVAL:
+                        _nInterval = static_cast<unsigned int>((*it).first);
+                        break;
+                case POLICY_RESPAWN_LIMITS:
+                        if (_nRetry >= static_cast<unsigned int>((*it).first)) {
+                                bReachMaxRetry = true;
+                        }
+                        break;
+                case POLICY_RESPAWN_FORCE:
+                        bForceRespawn = true;
+                        break;
+                }
+        }
+
+        // RESPAWN_FORCE should always be checked ahead of other flags
+        if (bForceRespawn) {
+                return true;
+        } else if (bReachMaxRetry) {
+                return false;
+        }
+        return bNeedRespawn;
 }
 
 //
@@ -204,10 +245,20 @@ void PubMonitor::Run()
 
 void PubMonitor::MonitorThread(void *_pParam)
 {
+        ProcEntry *pEntry;
+        int nExitCode;
+        unsigned int nInterval = 0, nRetry = 0;
         while (true) {
-                ProcEntry *pEntry = (ProcEntry *)_pParam;
-                pEntry->Run();
-                cout << "sleep 5 seconds" << endl;
-                OSIAPI::MakeSleep(5);
+                pEntry = (ProcEntry *)_pParam;
+                nExitCode = pEntry->Run();
+                if (pEntry->CheckRespawn(nExitCode, nRetry, nInterval)) {
+                        nRetry++;
+                        cout << "retry #" << nRetry << ", sleep " << nInterval << " seconds ..." << endl;
+                        OSIAPI::MakeSleep(nInterval);
+                } else {
+                        // child threads exit here
+                        cout << "Process [" << *pEntry << "] is exiting, retry #" << nRetry << endl;
+                        break;
+                }
         }
 }
