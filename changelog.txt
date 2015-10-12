@@ -4,3 +4,4 @@ Stream manapulation proj
 2015.09.07 Multipath RTSP clients support
 2015.09.21 Support multi-threading RTMP senders
 2015.09.29 Monitor multipath RTSP client daemon
+2015.10.13 Audio support
