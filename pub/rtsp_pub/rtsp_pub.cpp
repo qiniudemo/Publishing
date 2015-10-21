@@ -245,6 +245,7 @@ void RtspStream::StartStreaming()
         bStatus = pRtmpSender->Connect(true);
         if (bStatus != true) {
                 cout << *this << "Connection failed to server: " << this->rtmpUrl << " ..." << endl;
+                StopStreaming();
                 return;
         }
 
